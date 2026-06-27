@@ -1,0 +1,15 @@
+*.png
+*.jpg
+*.jpeg
+*.xlsx
+*.DS_Store
+*.idea
+*.pyc
+src/wandb/*
+src/CNN/*
+wandb/*
+src/login_data.yaml
+Base_CNN_skeleton/*
+*.JPEG
+*.ckpt
+*.pkl

@@ -1,0 +1,129 @@
+# --- Daten & Vorverarbeitung ---
+data:
+  path: 'data/before_after_with_box/train'
+  path_before: 'data'
+  random_state: 42
+  additional_false_images_count: 700
+  add_after_image_as_feature_channel: False # if True, the image is added as a feature channel to the model else it is set next to the other image
+  import_images_resize_size: {'height':384, 'width':384} # Median of all images {'height':3069, 'width':233}, can be changed dynamically
+
+# --- Transformations ---
+  transformation:
+    train:
+      - name: ToTensor
+      - name: Normalize
+        mean: [0.5, 0.5, 0.5]
+        std: [0.5, 0.5, 0.5]
+      - name: RandomHorizontalFlip
+        p: 0.3
+      - name: RandomVerticalFlip
+        p: 0.3
+      - degrees: 15
+        name: RandomRotation
+      - name: RandomGrayscale
+        p: 0.1
+      - name: RandomGaussianBlur
+        p: 0.1
+      - name: RandomAdjustSharpness
+        p: 0.1
+        sharpness_factor: 2
+      - name: RandomErasing
+        p: 0.1
+
+    val:
+      - name: ToTensor
+      - name: Normalize
+        mean: [0.5, 0.5, 0.5]
+        std: [0.5, 0.5, 0.5]
+
+    test:
+      - name: ToTensor
+# --- Splitting ---
+  kfolds:
+    active: True
+    n_splits: 5
+    shuffle: True
+  train_val_split: # only used if kfolds is not active
+    active: False
+    val_size: 0.2
+# --- Labels ---
+  label_column: "additional_rating" # standard is "Rating_clean"
+  combine_labels: True
+  combine_labels_mapping: { # 0: No error, 1: error on product, 2: error on substrate, paint or primer
+    Empty: 0,
+    TU: 1,
+    NC: 1,
+    SCF: 1,
+    FS: 1,
+    BFB: 1,
+    ES: 1,
+    SCPrF: 1,
+    CPrF: 1,
+    BF: 1,
+    NT: 1,
+    BS: 2,
+    SF: 2,
+    CFPa: 2,
+    PaIF: 2,
+    PaDF: 2,
+    Cor: 2
+  }
+  pad_images: False
+
+  # --- special label settings ---
+  additional_rating_label:
+    balanced: False
+
+# --- Dataloader ---
+dataloader:
+  train_loader:
+    batch_size: 16
+    num_workers: 2
+    pin_memory: True
+    drop_last: False
+    shuffle: True
+    persistent_workers: True
+  val_loader:
+      batch_size: 16
+      num_workers: 2
+      pin_memory: True
+      drop_last: False
+      shuffle: False
+      persistent_workers: True
+  test_loader:
+      batch_size: 16
+      num_workers: 1
+      pin_memory: True
+      drop_last: False
+      shuffle: False
+      persistent_workers: True
+
+# --- Model ---
+model:
+  path: "src.model.Vision_Transformer:VisionTransformerPretrained"
+  optimizer: "Adam" # [Adam, SGD]
+  save_model: False
+  optimizer_params:
+    lr: 0.000025
+  model_params:
+    freeze_backbone: True    # freeze backbone
+    pretrained: True         # use pretrained weights
+    dropout: 0.2             # Dropout-Rate
+    num_classes: 3           # Anzahl der Ausgabeklassen
+
+# --- Trainer ---
+trainer:
+  params:
+    max_epochs: 100
+    enable_progress_bar: True
+    #overfit_batches: 2 # 8 Batches
+
+
+# --- Logger ---
+logger:
+  lightning_logger_name: "WandbLogger" # logger type (dont change)
+  params:
+    project: "Before_after_Transformer" # which project will be logged on
+    entity: "bat_sika" # dont change
+    log_model: True # also log model to wandb
+    group: "Backbone_Vision_Transformer_vit-p32-384-base"
